@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb:10.6
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    volumes:
+      - /Volumes/MySSD/nextcloud/db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  app:
+    image: nextcloud:latest
+    restart: always
+    ports:
+      - 8080:80
+    links:
+      - db
+      - redis
+    volumes:
+      # User data on external SSD
+      - /Volumes/MySSD/nextcloud/data:/var/www/html/data
+
+      # Source code - editable on your Mac
+      - ./nextcloud-src:/var/www/html
+
+      # Or if you want to keep config/apps separate:
+      # - ./nextcloud-src:/var/www/html
+      # - /Volumes/MySSD/nextcloud/config:/var/www/html/config
+      # - /Volumes/MySSD/nextcloud/custom_apps:/var/www/html/custom_apps
+    environment:
+      - MYSQL_PASSWORD=nextcloud
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=db
+      - REDIS_HOST=redis
